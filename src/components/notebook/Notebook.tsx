@@ -77,9 +77,12 @@ export function Notebook() {
     }
   });
 
+  const [hasRegisteredLocally, setHasRegisteredLocally] = useState(false);
+
   useEffect(() => {
     if (registeredName && typeof registeredName === 'string' && registeredName.length > 0) {
       setAgentName(registeredName);
+      setHasRegisteredLocally(true);
     }
   }, [registeredName]);
 
@@ -118,6 +121,8 @@ export function Notebook() {
         await new Promise(r => setTimeout(r, 2000));
       }
       toast.success("Agent Identity Registered on Monad Testnet!");
+      
+      setHasRegisteredLocally(true);
       
       let retries = 0;
       const checkUpdate = setInterval(async () => {
@@ -434,20 +439,20 @@ export function Notebook() {
               <div className="w-full sm:w-1/3 space-y-2">
                 <label className="text-xs font-semibold text-white/50 uppercase tracking-wider flex justify-between">
                   Agent Identity
-                  {(registeredName && typeof registeredName === 'string' && registeredName === agentName && agentName !== '') && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
+                  {hasRegisteredLocally && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
                 </label>
                 <div className="flex gap-2">
                   <Input 
                     value={agentName} 
                     onChange={(e) => setAgentName(e.target.value)} 
                     placeholder="agent-name" 
-                    disabled={!!(registeredName && typeof registeredName === 'string' && registeredName === agentName && agentName !== '')}
-                    className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${registeredName === agentName && agentName.length > 0 ? 'text-green-400 disabled:opacity-100' : 'text-[#F5A623]'}`}
+                    disabled={hasRegisteredLocally}
+                    className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${hasRegisteredLocally ? 'text-green-400 disabled:opacity-100' : 'text-[#F5A623]'}`}
                   />
-                  {isConnected && (!registeredName || registeredName === '' || String(registeredName) !== agentName || agentName === '') && (
+                  {isConnected && !hasRegisteredLocally && (
                     <Button 
                       onClick={handleRegisterAgent} 
-                      disabled={isRegistering || !agentName || (typeof registeredName === 'string' && registeredName === agentName)}
+                      disabled={isRegistering || !agentName}
                       className="h-12 px-3 bg-white/10 hover:bg-white/20 text-white"
                       title="Register Identity On-Chain"
                     >
