@@ -74,6 +74,7 @@ export function Notebook() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: 5000,
     }
   });
 
@@ -115,12 +116,20 @@ export function Notebook() {
         }
       } catch (receiptError) {
         console.warn("waitForTransactionReceipt timed out or failed, proceeding anyway", receiptError);
-        // Monad testnet might be slow to return the receipt to publicClient, but metamask confirmed it.
-        // We will just fall back to a manual delay so the UI doesn't hang infinitely.
         await new Promise(r => setTimeout(r, 2000));
       }
       toast.success("Agent Identity Registered on Monad Testnet!");
-      await refetchRegisteredName();
+      
+      // Force a manual refetch loop to ensure the UI updates if the RPC is lagging
+      let retries = 0;
+      const checkUpdate = setInterval(async () => {
+        const result = await refetchRegisteredName();
+        if ((result.data && result.data === agentName) || retries > 5) {
+          clearInterval(checkUpdate);
+        }
+        retries++;
+      }, 2000);
+      
     } catch (e) {
       console.error(e);
       toast.error("Failed to register agent identity");
@@ -434,13 +443,13 @@ export function Notebook() {
                     value={agentName} 
                     onChange={(e) => setAgentName(e.target.value)} 
                     placeholder="agent-name" 
-                    disabled={!!(registeredName && typeof registeredName === 'string' && registeredName.length > 0)}
+                    disabled={!!(registeredName && typeof registeredName === 'string' && registeredName === agentName)}
                     className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${registeredName === agentName && agentName.length > 0 ? 'text-green-400 disabled:opacity-100' : 'text-[#F5A623]'}`}
                   />
-                  {isConnected && (!registeredName || registeredName === '') && (
+                  {isConnected && (!registeredName || registeredName === '' || registeredName !== agentName) && (
                     <Button 
                       onClick={handleRegisterAgent} 
-                      disabled={isRegistering || !agentName}
+                      disabled={isRegistering || !agentName || (typeof registeredName === 'string' && registeredName === agentName)}
                       className="h-12 px-3 bg-white/10 hover:bg-white/20 text-white"
                       title="Register Identity On-Chain"
                     >
