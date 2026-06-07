@@ -151,12 +151,49 @@ export function Notebook() {
     setIsSaving(true);
     try {
       if (selectedNote) {
-        await fetch(`/api/notes/${selectedNote.id}`, {
+        const res = await fetch(`/api/notes/${selectedNote.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, content }),
         });
-        toast.success("Note updated locally");
+        const updatedNote = await res.json();
+
+        if (!isConnected) {
+           toast.warning("Note updated locally. Please connect wallet to anchor the new version on Monad Testnet.");
+        } else if (updatedNote.hash) {
+          try {
+            const txHash = await writeContractAsync({
+              address: CONTRACT_ADDRESS,
+              abi: ABI,
+              functionName: 'addNoteHash',
+              args: [`0x${updatedNote.hash}`]
+            });
+            toast.info("Transaction submitted, waiting for confirmation...");
+            try {
+              if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 30000 });
+              } else {
+                await new Promise(r => setTimeout(r, 4000));
+              }
+            } catch (receiptError) {
+              console.warn("waitForTransactionReceipt timed out or failed, proceeding anyway", receiptError);
+              await new Promise(r => setTimeout(r, 2000));
+            }
+            await fetch(`/api/notes/${updatedNote.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tx_hash: txHash })
+            });
+            toast.success("Note updated and anchored!");
+          } catch (e: any) {
+            console.error(e);
+            if (e?.message?.includes("User rejected") || e?.code === 4001) {
+              toast.error("Transaction rejected by user. Note updated locally.");
+            } else {
+              toast.error("Failed to anchor on Monad Testnet. Note updated locally.");
+            }
+          }
+        }
       } else {
         const res = await fetch('/api/notes', {
           method: 'POST',
