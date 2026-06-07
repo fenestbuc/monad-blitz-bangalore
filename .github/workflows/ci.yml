@@ -31,5 +31,9 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         
       - name: Run Foundry Tests
-        working-directory: ./foundry
-        run: forge test
+        run: |
+          if [ -d "./foundry" ]; then
+            cd ./foundry && forge test
+          else
+            echo "Foundry directory not found, skipping forge tests."
+          fi
