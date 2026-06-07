@@ -281,7 +281,13 @@ export function Notebook() {
       >
         <div className="p-6 border-b border-white/5 flex-shrink-0">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold tracking-tight text-white">Agent Memory</h2>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">Agent Memory</h2>
+              <div className="text-[10px] text-white/50 mt-1 flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${globalNoteCount ? 'bg-green-400' : 'bg-yellow-500/50'}`} />
+                {globalNoteCount ? `Total Anchored: ${globalNoteCount.toString()}` : 'Syncing chain data...'}
+              </div>
+            </div>
             {isConnected ? (
               <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs bg-white/5 border-white/10 hover:bg-white/10 text-white">
                 Disconnect
@@ -334,7 +340,6 @@ export function Notebook() {
             )}
           </div>
         </div>
-
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full p-4">
             <AnimatePresence>
@@ -376,7 +381,6 @@ export function Notebook() {
           </ScrollArea>
         </div>
       </motion.div>
-
       {/* Editor Pane */}
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
