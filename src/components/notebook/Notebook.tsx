@@ -78,8 +78,8 @@ export function Notebook() {
   });
 
   useEffect(() => {
-    if (registeredName) {
-      setAgentName(registeredName as string);
+    if (registeredName && typeof registeredName === 'string' && registeredName.length > 0) {
+      setAgentName(registeredName);
     }
   }, [registeredName]);
 
@@ -423,16 +423,17 @@ export function Notebook() {
               <div className="w-full sm:w-1/3 space-y-2">
                 <label className="text-xs font-semibold text-white/50 uppercase tracking-wider flex justify-between">
                   Agent Identity
-                  {registeredName && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
+                  {(registeredName && typeof registeredName === 'string' && registeredName.length > 0) && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
                 </label>
                 <div className="flex gap-2">
                   <Input 
                     value={agentName} 
                     onChange={(e) => setAgentName(e.target.value)} 
                     placeholder="agent-name" 
-                    className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${registeredName === agentName ? 'text-green-400' : 'text-[#F5A623]'}`}
+                    disabled={!!(registeredName && typeof registeredName === 'string' && registeredName.length > 0)}
+                    className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${registeredName === agentName && agentName.length > 0 ? 'text-green-400 disabled:opacity-100' : 'text-[#F5A623]'}`}
                   />
-                  {isConnected && registeredName !== agentName && (
+                  {isConnected && (!registeredName || registeredName === '') && (
                     <Button 
                       onClick={handleRegisterAgent} 
                       disabled={isRegistering || !agentName}
