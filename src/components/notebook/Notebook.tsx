@@ -294,8 +294,8 @@ export function Notebook() {
             <div>
               <h2 className="text-xl font-bold tracking-tight text-white">Agent Memory</h2>
               <div className="text-[10px] text-white/50 mt-1 flex items-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${globalNoteCount ? 'bg-green-400' : 'bg-yellow-500/50'}`} />
-                {globalNoteCount ? `Total Anchored: ${globalNoteCount.toString()}` : 'Syncing chain data...'}
+                <div className={`w-1.5 h-1.5 rounded-full ${typeof globalNoteCount === 'bigint' ? 'bg-green-400' : 'bg-yellow-500/50'}`} />
+                {typeof globalNoteCount === 'bigint' ? `Total Anchored: ${globalNoteCount.toString()}` : 'Syncing chain data...'}
               </div>
             </div>
             {isConnected ? (
