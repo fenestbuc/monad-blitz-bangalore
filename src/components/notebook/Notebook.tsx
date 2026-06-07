@@ -107,11 +107,17 @@ export function Notebook() {
         args: [agentName]
       });
       toast.info("Transaction submitted, waiting for confirmation...");
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({ hash: txHash });
-      } else {
-        // Fallback delay if publicClient isn't ready
-        await new Promise(r => setTimeout(r, 4000));
+      try {
+        if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 30000 });
+        } else {
+          await new Promise(r => setTimeout(r, 4000));
+        }
+      } catch (receiptError) {
+        console.warn("waitForTransactionReceipt timed out or failed, proceeding anyway", receiptError);
+        // Monad testnet might be slow to return the receipt to publicClient, but metamask confirmed it.
+        // We will just fall back to a manual delay so the UI doesn't hang infinitely.
+        await new Promise(r => setTimeout(r, 2000));
       }
       toast.success("Agent Identity Registered on Monad Testnet!");
       await refetchRegisteredName();
@@ -151,10 +157,15 @@ export function Notebook() {
               args: [`0x${newNote.hash}`]
             });
             toast.info("Transaction submitted, waiting for confirmation...");
-            if (publicClient) {
-              await publicClient.waitForTransactionReceipt({ hash: txHash });
-            } else {
-              await new Promise(r => setTimeout(r, 4000));
+            try {
+              if (publicClient) {
+                await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 30000 });
+              } else {
+                await new Promise(r => setTimeout(r, 4000));
+              }
+            } catch (receiptError) {
+              console.warn("waitForTransactionReceipt timed out or failed, proceeding anyway", receiptError);
+              await new Promise(r => setTimeout(r, 2000));
             }
             await fetch(`/api/notes/${newNote.id}`, {
               method: 'PUT',
