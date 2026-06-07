@@ -322,8 +322,16 @@ export function Notebook() {
               placeholder="Search memory..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 bg-white/5 border-white/10 text-white h-9 text-xs"
+              className="pl-9 pr-8 bg-white/5 border-white/10 text-white h-9 text-xs"
             />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -407,7 +415,8 @@ export function Notebook() {
                 value={title} 
                 onChange={(e) => setTitle(e.target.value)} 
                 placeholder="Observation log..." 
-                className="bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 text-white h-12"
+                disabled={!!selectedNote?.tx_hash}
+                className="bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 text-white h-12 disabled:opacity-50"
               />
             </div>
             {!selectedNote && (
@@ -473,8 +482,9 @@ export function Notebook() {
                 value={content} 
                 onChange={(e) => setContent(e.target.value)} 
                 onKeyDown={handleKeyDown}
+                disabled={!!selectedNote?.tx_hash}
                 placeholder="Write immutable payload here... (Markdown supported)" 
-                className="flex-1 resize-none font-mono bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 text-sm p-4 text-white/90 leading-relaxed min-h-[200px]"
+                className="flex-1 resize-none font-mono bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 text-sm p-4 text-white/90 leading-relaxed min-h-[200px] disabled:opacity-50"
               />
             )}
           </div>
@@ -505,15 +515,21 @@ export function Notebook() {
             )
           )}
 
-          <div className="flex justify-end pt-2 flex-shrink-0">
-            <Button 
-              onClick={handleSave} 
-              disabled={!title || !content || isSaving} 
-              className="min-w-[160px] h-12 bg-[#F5A623] hover:bg-[#D98E1C] text-black font-semibold shadow-[0_0_15px_rgba(245,166,35,0.2)] disabled:opacity-50"
-            >
-              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : (selectedNote ? 'Update Metadata' : 'Sign & Anchor on Monad')}
-            </Button>
-          </div>
+          {!selectedNote?.tx_hash && (
+            <div className="flex justify-end pt-2 flex-shrink-0">
+              <Button 
+                onClick={handleSave} 
+                disabled={!title || !content || isSaving} 
+                className="min-w-[160px] h-12 bg-[#F5A623] hover:bg-[#D98E1C] text-black font-semibold shadow-[0_0_15px_rgba(245,166,35,0.2)] disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                  selectedNote 
+                    ? (isConnected ? 'Update & Anchor' : 'Update Locally') 
+                    : (isConnected ? 'Sign & Anchor on Monad' : 'Save Locally')
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

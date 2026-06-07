@@ -72,12 +72,20 @@ export function updateNote(
   title: string,
   content: string,
 ): Note | undefined {
+  const existingNote = getNoteById(id);
+  if (!existingNote) return undefined;
+
+  const newHash = crypto
+    .createHash("sha256")
+    .update(content + existingNote.agent_name)
+    .digest("hex");
+
   const stmt = db.prepare(`
     UPDATE notes
-    SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP
+    SET title = ?, content = ?, hash = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
-  stmt.run(title, content, id);
+  stmt.run(title, content, newHash, id);
   return getNoteById(id);
 }
 
