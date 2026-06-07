@@ -74,7 +74,6 @@ export function Notebook() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
-      refetchInterval: 5000,
     }
   });
 
@@ -120,11 +119,13 @@ export function Notebook() {
       }
       toast.success("Agent Identity Registered on Monad Testnet!");
       
-      // Force a manual refetch loop to ensure the UI updates if the RPC is lagging
+      // Force set local state so UI updates immediately
+      setAgentName(agentName);
+      
       let retries = 0;
       const checkUpdate = setInterval(async () => {
         const result = await refetchRegisteredName();
-        if ((result.data && result.data === agentName) || retries > 5) {
+        if ((result.data && result.data === agentName) || retries > 10) {
           clearInterval(checkUpdate);
         }
         retries++;
@@ -436,7 +437,7 @@ export function Notebook() {
               <div className="w-full sm:w-1/3 space-y-2">
                 <label className="text-xs font-semibold text-white/50 uppercase tracking-wider flex justify-between">
                   Agent Identity
-                  {(registeredName && typeof registeredName === 'string' && registeredName.length > 0) && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
+                  {(registeredName && typeof registeredName === 'string' && registeredName === agentName) && <span className="text-green-400 flex items-center"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</span>}
                 </label>
                 <div className="flex gap-2">
                   <Input 
