@@ -133,9 +133,15 @@ export function Notebook() {
         retries++;
       }, 2000);
       
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Failed to register agent identity");
+      
+      // Check if it's a "User rejected the request" error (MetaMask rejection)
+      if (e?.message?.includes("User rejected") || e?.code === 4001) {
+        toast.error("Transaction rejected by user.");
+      } else {
+        toast.error("Failed to register agent identity");
+      }
     } finally {
       setIsRegistering(false);
     }
@@ -150,6 +156,7 @@ export function Notebook() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, content }),
         });
+        toast.success("Note updated locally");
       } else {
         const res = await fetch('/api/notes', {
           method: 'POST',
@@ -159,7 +166,7 @@ export function Notebook() {
         const newNote = await res.json();
 
         if (!isConnected) {
-           toast.warning("Note saved locally, but not anchored on Monad Testnet because your wallet is disconnected. Please connect wallet to anchor notes.");
+           toast.warning("Note saved locally. Please connect wallet to anchor on Monad Testnet.");
         } else if (newNote.hash) {
           try {
             const txHash = await writeContractAsync({
@@ -184,14 +191,18 @@ export function Notebook() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ tx_hash: txHash })
             });
-          } catch (e) {
-            console.error("Failed to write to contract:", e);
-            toast.error("Failed to anchor on Monad Testnet");
+            toast.success(selectedNote ? "Note updated and anchored!" : "Note created and anchored!");
+          } catch (e: any) {
+            console.error(e);
+            if (e?.message?.includes("User rejected") || e?.code === 4001) {
+              toast.error("Transaction rejected by user. Note saved locally.");
+            } else {
+              toast.error("Failed to anchor on Monad Testnet. Note saved locally.");
+            }
           }
         }
       }
       
-      toast.success(selectedNote ? "Note updated successfully" : "Note created successfully");
       setTitle('');
       setContent('');
       setSelectedNote(null);
@@ -444,7 +455,12 @@ export function Notebook() {
                 <div className="flex gap-2">
                   <Input 
                     value={agentName} 
-                    onChange={(e) => setAgentName(e.target.value)} 
+                    onChange={(e) => {
+                      setAgentName(e.target.value);
+                      if (hasRegisteredLocally && e.target.value !== registeredName) {
+                        setHasRegisteredLocally(false);
+                      }
+                    }} 
                     placeholder="agent-name" 
                     disabled={hasRegisteredLocally}
                     className={`bg-white/5 border-white/10 focus-visible:ring-[#F5A623]/50 font-mono text-sm h-12 ${hasRegisteredLocally ? 'text-green-400 disabled:opacity-100' : 'text-[#F5A623]'}`}
@@ -452,7 +468,7 @@ export function Notebook() {
                   {isConnected && !hasRegisteredLocally && (
                     <Button 
                       onClick={handleRegisterAgent} 
-                      disabled={isRegistering || !agentName}
+                      disabled={isRegistering || !agentName || agentName.trim() === ''}
                       className="h-12 px-3 bg-white/10 hover:bg-white/20 text-white"
                       title="Register Identity On-Chain"
                     >
