@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { parseAbi } from 'viem';
 import { ShieldAlert, ShieldCheck, Download, ExternalLink, Loader2, Edit3, Plus, Trash2, Search, Check, X, FileText, Code } from 'lucide-react';
@@ -57,6 +57,7 @@ export function Notebook() {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const { data: globalNoteCount } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: ABI,
@@ -99,12 +100,19 @@ export function Notebook() {
     if (!isConnected || !agentName) return;
     setIsRegistering(true);
     try {
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address: REGISTRY_ADDRESS,
         abi: REGISTRY_ABI,
         functionName: 'registerAgent',
         args: [agentName]
       });
+      toast.info("Transaction submitted, waiting for confirmation...");
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+      } else {
+        // Fallback delay if publicClient isn't ready
+        await new Promise(r => setTimeout(r, 4000));
+      }
       toast.success("Agent Identity Registered on Monad Testnet!");
       await refetchRegisteredName();
     } catch (e) {
@@ -142,6 +150,12 @@ export function Notebook() {
               functionName: 'addNoteHash',
               args: [`0x${newNote.hash}`]
             });
+            toast.info("Transaction submitted, waiting for confirmation...");
+            if (publicClient) {
+              await publicClient.waitForTransactionReceipt({ hash: txHash });
+            } else {
+              await new Promise(r => setTimeout(r, 4000));
+            }
             await fetch(`/api/notes/${newNote.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },

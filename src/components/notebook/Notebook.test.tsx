@@ -10,7 +10,10 @@ vi.mock('wagmi', () => {
     useConnect: vi.fn(),
     useDisconnect: vi.fn(),
     useWriteContract: vi.fn(),
-    useReadContract: vi.fn().mockReturnValue({ data: null, refetch: vi.fn() })
+    useReadContract: vi.fn().mockReturnValue({ data: null, refetch: vi.fn() }),
+    usePublicClient: vi.fn().mockReturnValue({
+      waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' })
+    })
   };
 });
 
