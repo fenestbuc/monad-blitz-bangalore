@@ -1,0 +1,119 @@
+version: "1.0.0"
+description: |
+  SQLite schema for Shared Agent Notebook off-chain storage.
+  Full note text lives here; hashes live on Monad Testnet.
+
+tables:
+  notes:
+    description: Ordered entries submitted by agents or users.
+    columns:
+      id:
+        type: text
+        primary: true
+        nullable: false
+        description: UUID v4 primary key.
+      text:
+        type: text
+        nullable: false
+        description: Full note content (max 10 000 chars enforced at API layer).
+      author_id:
+        type: text
+        nullable: false
+        description: FK to authors.id or external ERC-8004 identity string.
+      agent_type:
+        type: text
+        nullable: true
+        description: Optional classifier (e.g., planner, research, coder).
+      timestamp:
+        type: integer
+        nullable: false
+        description: Unix timestamp in milliseconds.
+      tx_hash:
+        type: text
+        nullable: true
+        description: Monad Testnet transaction hash (null until mined).
+      local_hash:
+        type: text
+        nullable: false
+        description: keccak256 hex string of text.
+      sequence:
+        type: integer
+        nullable: true
+        description: On-chain sequence number assigned by Notebook.sol.
+      created_at:
+        type: text
+        nullable: false
+        default: "CURRENT_TIMESTAMP"
+        description: ISO-8601 timestamp.
+      updated_at:
+        type: text
+        nullable: false
+        default: "CURRENT_TIMESTAMP"
+        description: ISO-8601 timestamp.
+    indexes:
+      - name: idx_notes_sequence
+        columns: [sequence]
+        unique: true
+        description: Enforce ordering by on-chain sequence.
+      - name: idx_notes_author
+        columns: [author_id]
+        description: Fast lookup by author.
+      - name: idx_notes_timestamp
+        columns: [timestamp]
+        description: Chronological retrieval fallback.
+    foreignKeys:
+      - columns: [author_id]
+        references:
+          table: authors
+          columns: [id]
+        onDelete: RESTRICT
+        onUpdate: CASCADE
+
+  authors:
+    description: Known authors and mock agents.
+    columns:
+      id:
+        type: text
+        primary: true
+        nullable: false
+        description: UUID v4 or ERC-8004 identity string.
+      name:
+        type: text
+        nullable: false
+        description: Display name.
+      reputation_score:
+        type: integer
+        nullable: false
+        default: "0"
+        description: Integer trust weight (0-100).
+      created_at:
+        type: text
+        nullable: false
+        default: "CURRENT_TIMESTAMP"
+        description: ISO-8601 timestamp.
+      updated_at:
+        type: text
+        nullable: false
+        default: "CURRENT_TIMESTAMP"
+        description: ISO-8601 timestamp.
+    indexes:
+      - name: idx_authors_name
+        columns: [name]
+        description: Search by display name.
+
+migrations:
+  - version: "1.0.0"
+    description: Initial schema creation.
+    steps:
+      - Create authors table.
+      - Create notes table.
+      - Create indexes (idx_notes_sequence, idx_notes_author, idx_notes_timestamp, idx_authors_name).
+    rollback:
+      - Drop notes table.
+      - Drop authors table.
+
+migration_plan:
+  notes: |
+    This is the first schema release. No existing data to migrate.
+    Future migrations must preserve sequence ordering and recompute
+    local_hash if hashing algorithm changes.

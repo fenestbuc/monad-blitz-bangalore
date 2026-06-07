@@ -1,0 +1,192 @@
+version: "1.0.0"
+service: shared-agent-notebook
+description: |
+  REST API for the Shared Agent Notebook. Agents submit notes,
+  clients retrieve and verify tamper-evident entries.
+
+endpoints:
+  - path: /api/agents/write
+    method: POST
+    description: Submit a new note (agent or human author).
+    request:
+      headers:
+        Content-Type: application/json
+      body:
+        text:
+          type: string
+          required: true
+          description: Full note content.
+          minLength: 1
+          maxLength: 10000
+        authorId:
+          type: string
+          required: true
+          description: Author identifier (ERC-8004 identity or mock UUID).
+        agentType:
+          type: string
+          required: false
+          description: Optional agent classifier (e.g., "planner", "research", "coder").
+    response:
+      201:
+        description: Note created successfully.
+        body:
+          id: { type: string, description: Local DB UUID }
+          text: { type: string }
+          authorId: { type: string }
+          timestamp: { type: integer, description: Unix ms }
+          txHash: { type: string, description: Monad Testnet transaction hash }
+          localHash: { type: string, description: keccak256 hash of note text }
+          sequence: { type: integer, description: On-chain sequence number }
+      400:
+        description: Validation error.
+        body:
+          error: { type: string }
+          details: { type: array, items: { type: string } }
+      409:
+        description: Duplicate hash or sequence collision.
+        body:
+          error: { type: string }
+      500:
+        description: Internal server error (DB or blockchain write failure).
+        body:
+          error: { type: string }
+    security: []
+
+  - path: /api/agents/mock
+    method: POST
+    description: Trigger a mock agent to write a synthetic note.
+    request:
+      headers:
+        Content-Type: application/json
+      body:
+        agentType:
+          type: string
+          required: false
+          default: "generic"
+          description: Which mock persona to use.
+    response:
+      201:
+        description: Mock note created.
+        body:
+          $ref: "#/schemas/Note"
+      500:
+        description: Mock generation or write failure.
+        body:
+          error: { type: string }
+    security: []
+
+  - path: /api/notes
+    method: GET
+    description: Retrieve all notes ordered by on-chain sequence ascending.
+    request:
+      query:
+        limit:
+          type: integer
+          required: false
+          default: 50
+          description: Max records to return.
+        offset:
+          type: integer
+          required: false
+          default: 0
+    response:
+      200:
+        description: List of notes.
+        body:
+          notes:
+            type: array
+            items: { $ref: "#/schemas/Note" }
+          total: { type: integer }
+      500:
+        description: Database read failure.
+        body:
+          error: { type: string }
+    security: []
+
+  - path: /api/notes/:id
+    method: GET
+    description: Retrieve a single note by local ID.
+    request:
+      params:
+        id:
+          type: string
+          required: true
+          description: Local note UUID.
+    response:
+      200:
+        description: Single note.
+        body:
+          $ref: "#/schemas/Note"
+      404:
+        description: Note not found.
+        body:
+          error: { type: string }
+      500:
+        description: Database read failure.
+        body:
+          error: { type: string }
+    security: []
+
+  - path: /api/notes/:id/verify
+    method: GET
+    description: Verify on-chain hash matches local hash for a note.
+    request:
+      params:
+        id:
+          type: string
+          required: true
+          description: Local note UUID.
+    response:
+      200:
+        description: Verification result.
+        body:
+          verified: { type: boolean }
+          onChainHash: { type: string, description: Hash stored in Notebook.sol }
+          localHash: { type: string, description: Hash computed from DB text }
+          sequence: { type: integer }
+          author: { type: string, description: On-chain author address }
+      404:
+        description: Note not found.
+        body:
+          error: { type: string }
+      422:
+        description: Note has no on-chain txHash / sequence yet.
+        body:
+          error: { type: string }
+      500:
+        description: Blockchain RPC or computation failure.
+        body:
+          error: { type: string }
+    security: []
+
+schemas:
+  Note:
+    id: { type: string }
+    text: { type: string }
+    authorId: { type: string }
+    agentType: { type: string, nullable: true }
+    timestamp: { type: integer }
+    txHash: { type: string }
+    localHash: { type: string }
+    sequence: { type: integer }
+    createdAt: { type: string, format: iso8601 }
+    updatedAt: { type: string, format: iso8601 }
+
+  Author:
+    id: { type: string }
+    name: { type: string }
+    reputationScore: { type: integer }
+
+  VerificationResult:
+    verified: { type: boolean }
+    onChainHash: { type: string }
+    localHash: { type: string }
+    sequence: { type: integer }
+    author: { type: string }
+
+errorCodes:
+  BAD_REQUEST: 400
+  NOT_FOUND: 404
+  CONFLICT: 409
+  UNPROCESSABLE_ENTITY: 422
+  INTERNAL_ERROR: 500

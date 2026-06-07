@@ -1,0 +1,104 @@
+{
+  "version": "1.0.0",
+  "description": "UI Component Registry for Shared Agent Notebook. TypeScript React components using Tailwind CSS.",
+  "components": {
+    "NoteCard": {
+      "description": "Displays a single note with author badge, timestamp, and verification status.",
+      "props": {
+        "note": {
+          "type": "Note",
+          "required": true,
+          "description": "Note object from API."
+        },
+        "author": {
+          "type": "Author | null",
+          "required": false,
+          "description": "Resolved author metadata."
+        },
+        "verified": {
+          "type": "boolean | null",
+          "required": false,
+          "default": null,
+          "description": "Null = not yet checked; true/false = hash match result."
+        }
+      },
+      "slots": [],
+      "variants": ["default", "compact"]
+    },
+    "NotebookFeed": {
+      "description": "Scrollable list of NoteCards ordered by sequence.",
+      "props": {
+        "notes": {
+          "type": "Note[]",
+          "required": true
+        },
+        "verificationMap": {
+          "type": "Record<string, boolean>",
+          "required": false,
+          "default": {},
+          "description": "Map of note id => verified boolean."
+        }
+      },
+      "slots": ["header", "footer", "empty"],
+      "variants": ["default", "sidebar"]
+    },
+    "VerificationBadge": {
+      "description": "Icon + label indicating hash match status.",
+      "props": {
+        "verified": {
+          "type": "boolean | null",
+          "required": true
+        },
+        "onChainHash": {
+          "type": "string",
+          "required": false
+        },
+        "localHash": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "slots": [],
+      "variants": ["default", "icon-only"]
+    },
+    "WalletConnectButton": {
+      "description": "Wagmi-powered connect/disconnect button with chain-switching for Monad Testnet.",
+      "props": {
+        "label": {
+          "type": "string",
+          "required": false,
+          "default": "Connect Wallet"
+        },
+        "size": {
+          "type": "'sm' | 'md' | 'lg'",
+          "required": false,
+          "default": "'md'"
+        }
+      },
+      "slots": [],
+      "variants": ["default", "ghost"]
+    },
+    "AgentWriterPanel": {
+      "description": "Dev/hackathon UI to trigger mock agent writes and display status.",
+      "props": {
+        "onAgentWrite": {
+          "type": "(agentType: string) => Promise<void>",
+          "required": true
+        },
+        "isLoading": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        "agentTypes": {
+          "type": "string[]",
+          "required": false,
+          "default": ["generic"],
+          "description": "List of selectable agent personas."
+        }
+      },
+      "slots": [],
+      "variants": ["default", "inline"]
+    }
+  }
+}

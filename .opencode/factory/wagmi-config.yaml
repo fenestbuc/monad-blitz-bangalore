@@ -1,0 +1,95 @@
+version: "1.0.0"
+description: |
+  Viem / Wagmi configuration contract for the Shared Agent Notebook frontend.
+  Defines the Monad Testnet chain, RPC transport, wallet connectors,
+  and ABI mapping for the Notebook smart contract.
+
+chain:
+  id: 10143
+  name: "Monad Testnet"
+  nativeCurrency:
+    name: "Monad"
+    symbol: "MON"
+    decimals: 18
+  rpcUrls:
+    default:
+      http: ["https://testnet-rpc.monad.xyz"]
+      webSocket: []
+    public:
+      http: ["https://testnet-rpc.monad.xyz"]
+      webSocket: []
+  blockExplorers:
+    default:
+      name: "Monad Testnet Explorer"
+      url: "https://testnet.monadexplorer.com"
+  testnet: true
+
+transport:
+  type: http
+  url: "${MONAD_RPC_URL:-https://testnet-rpc.monad.xyz}"
+  config:
+    batch: true
+    retryCount: 3
+    retryDelay: 150
+
+wallet_connectors:
+  - id: injected
+    name: "Injected Wallet"
+    description: MetaMask, Rabby, or any EIP-1193 provider.
+  - id: walletConnect
+    name: "WalletConnect"
+    description: Mobile wallet connection via WalletConnect v2.
+    required_env:
+      - WALLETCONNECT_PROJECT_ID
+
+contracts:
+  Notebook:
+    address: "${NOTEBOOK_CONTRACT_ADDRESS}"
+    abi:
+      - type: function
+        name: addNoteHash
+        stateMutability: nonpayable
+        inputs:
+          - name: hash
+            type: bytes32
+          - name: author
+            type: address
+        outputs: []
+      - type: function
+        name: getNoteHash
+        stateMutability: view
+        inputs:
+          - name: sequence
+            type: uint256
+        outputs:
+          - name: hash
+            type: bytes32
+          - name: author
+            type: address
+      - type: function
+        name: getTotalNotes
+        stateMutability: view
+        inputs: []
+        outputs:
+          - name: count
+            type: uint256
+      - type: event
+        name: NoteHashAdded
+        inputs:
+          - name: sequence
+            type: uint256
+            indexed: true
+          - name: hash
+            type: bytes32
+            indexed: true
+          - name: author
+            type: address
+            indexed: true
+
+configuration:
+  autoConnect: true
+  query:
+    staleTime: 30000
+    refetchInterval: false
+  ens:
+    enabled: false

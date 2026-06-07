@@ -1,0 +1,31 @@
+{
+  "run_id": "init-notebook-2025-06-07",
+  "branch_prefix": "init",
+  "created_at": "2025-06-07T09:30:00Z",
+  "lock": {
+    "locked": true,
+    "owner": "orchestrator",
+    "since": "2025-06-07T09:30:00Z"
+  },
+  "stages": {
+    "1-scaffold": {
+      "status": "completed",
+      "agents": [{"name": "orchestrator", "status": "completed", "branch": "main"}]
+    },
+    "2-parallel-setup": {
+      "status": "in_progress",
+      "agents": [
+        {"name": "storage-agent", "status": "pending", "branch": "init/storage"},
+        {"name": "ui-agent", "status": "pending", "branch": "init/ui"}
+      ]
+    },
+    "3-integration": {
+      "status": "pending",
+      "agents": [{"name": "integrator", "status": "pending", "branch": "init/integrator"}]
+    },
+    "4-verification": {
+      "status": "pending",
+      "agents": [{"name": "qa", "status": "pending", "branch": "init/qa"}]
+    }
+  }
+}

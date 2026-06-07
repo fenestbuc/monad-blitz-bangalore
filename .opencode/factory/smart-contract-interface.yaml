@@ -1,0 +1,102 @@
+version: "1.0.0"
+contract:
+  name: Notebook
+  language: solidity
+  pragma: ^0.8.20
+  description: |
+    On-chain tamper-evidence registry for the Shared Agent Notebook.
+    Stores ordered keccak256 hashes of notes together with author addresses.
+    Full text remains off-chain in SQLite.
+
+network:
+  monad_testnet:
+    chainId: 10143
+    name: "Monad Testnet"
+    rpcUrl: "https://testnet-rpc.monad.xyz"
+    faucetUrl: "https://faucet.monad.xyz"
+    currency:
+      symbol: "MON"
+      decimals: 18
+
+functions:
+  addNoteHash:
+    visibility: external
+    mutability: nonpayable
+    description: Store a note hash and assign the next sequence number.
+    parameters:
+      - name: hash
+        type: bytes32
+        description: keccak256 hash of the note text.
+      - name: author
+        type: address
+        description: Address of the author (EOA or ERC-8004 identity registry address).
+    returns: []
+    reverts:
+      - description: Hash already exists (duplicate).
+        selector: DuplicateHash(bytes32)
+    emits:
+      - NoteHashAdded
+
+  getNoteHash:
+    visibility: view
+    mutability: pure
+    description: Retrieve hash and author for a given sequence number.
+    parameters:
+      - name: sequence
+        type: uint256
+        description: 1-based sequence index.
+    returns:
+      - name: hash
+        type: bytes32
+      - name: author
+        type: address
+    reverts:
+      - description: Sequence out of bounds.
+        selector: InvalidSequence(uint256)
+
+  getTotalNotes:
+    visibility: view
+    mutability: pure
+    description: Return total number of hashes stored.
+    parameters: []
+    returns:
+      - name: count
+        type: uint256
+
+events:
+  NoteHashAdded:
+    description: Emitted when a new hash is appended.
+    inputs:
+      - name: sequence
+        type: uint256
+        indexed: true
+        description: 1-based sequence number.
+      - name: hash
+        type: bytes32
+        indexed: true
+        description: The stored keccak256 hash.
+      - name: author
+        type: address
+        indexed: true
+        description: Author address.
+
+state:
+  - name: noteHashes
+    type: mapping(uint256 => bytes32)
+    description: sequence => hash
+
+  - name: noteAuthors
+    type: mapping(uint256 => address)
+    description: sequence => author
+
+  - name: _totalNotes
+    type: uint256
+    description: Current count of stored notes.
+
+security:
+  access_control: |
+    addNoteHash is external and permissionless in the hackathon build.
+    Production may gate via ERC-8004 Identity Registry or Reputation Registry.
+  integrity: |
+    Sequence is strictly monotonic (no gaps, no overwrites).
+    Duplicate hashes are rejected to prevent replay.
