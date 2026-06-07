@@ -19,13 +19,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await request.json();
     
-    if (body.tx_hash) {
+    // Check if we are ONLY updating the tx_hash
+    if (body.tx_hash !== undefined && Object.keys(body).length === 1) {
        const updated = setTxHash(id, body.tx_hash);
+       if (!updated) {
+         return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+       }
        return NextResponse.json(updated);
     }
     
     const { title, content } = body;
     
+    if (!title || !content) {
+      return NextResponse.json({ error: 'Missing required fields for update' }, { status: 400 });
+    }
+
     const updatedNote = updateNote(id, title, content);
     if (!updatedNote) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });

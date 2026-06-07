@@ -59,7 +59,7 @@ describe('API Routes', () => {
     });
   });
 
-  describe('PUT /api/notes/[id] (tx_hash)', () => {
+  describe('PUT /api/notes/[id]', () => {
     it('updates tx_hash separately', async () => {
       const mockUpdated = { id: '1', tx_hash: '0x123' };
       (storage.setTxHash as any).mockReturnValue(mockUpdated);
@@ -75,6 +75,16 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
       expect(data).toEqual(mockUpdated);
       expect(storage.setTxHash).toHaveBeenCalledWith('1', '0x123');
+    });
+
+    it('returns 400 on missing update fields', async () => {
+      const req = new Request('http://localhost/api/notes/1', {
+        method: 'PUT',
+        body: JSON.stringify({ title: 'Missing Content' })
+      });
+
+      const res = await routeId.PUT(req, { params: Promise.resolve({ id: '1' }) });
+      expect(res.status).toBe(400);
     });
   });
 });
