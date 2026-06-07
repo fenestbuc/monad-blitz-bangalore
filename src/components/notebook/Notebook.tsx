@@ -305,7 +305,7 @@ export function Notebook() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      if (title && content && !isSaving) {
+      if (title && content && agentName && !isSaving) {
         handleSave();
       }
     }
@@ -589,7 +589,7 @@ export function Notebook() {
             <div className="flex justify-end pt-2 flex-shrink-0">
               <Button 
                 onClick={handleSave} 
-                disabled={!title || !content || isSaving} 
+                disabled={!title || !content || !agentName || isSaving} 
                 className="min-w-[160px] h-12 bg-[#F5A623] hover:bg-[#D98E1C] text-black font-semibold shadow-[0_0_15px_rgba(245,166,35,0.2)] disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : (
